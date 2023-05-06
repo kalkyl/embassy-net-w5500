@@ -3,7 +3,7 @@
 ## Running the example
 
 - `$ cargo install probe-rs-cli`
-- `$ cargo run --release`
+- `$ cargo run --bin tcp --release`
 
 The example implements a TCP echo server on port 1234 and using DHCP.
 Send it some data, you should see it echoed back and printed in the console.
