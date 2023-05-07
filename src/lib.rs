@@ -45,26 +45,32 @@ pub struct Runner<'d, SPI: SpiDevice, INT: Wait, RST: OutputPin> {
 impl<'d, SPI: SpiDevice, INT: Wait, RST: OutputPin> Runner<'d, SPI, INT, RST> {
     pub async fn run(mut self) -> ! {
         let (state_chan, mut rx_chan, mut tx_chan) = self.ch.split();
-        state_chan.set_link_state(LinkState::Up);
         loop {
-            match select(
-                async {
-                    self.int.wait_for_low().await.ok();
-                    rx_chan.rx_buf().await
-                },
-                tx_chan.tx_buf(),
-            )
-            .await
-            {
-                Either::First(p) => {
-                    if let Ok(n) = self.mac.read_frame(p).await {
-                        rx_chan.rx_done(n);
+            if self.mac.is_link_up().await {
+                state_chan.set_link_state(LinkState::Up);
+                loop {
+                    match select(
+                        async {
+                            self.int.wait_for_low().await.ok();
+                            rx_chan.rx_buf().await
+                        },
+                        tx_chan.tx_buf(),
+                    )
+                    .await
+                    {
+                        Either::First(p) => {
+                            if let Ok(n) = self.mac.read_frame(p).await {
+                                rx_chan.rx_done(n);
+                            }
+                        }
+                        Either::Second(p) => {
+                            self.mac.write_frame(p).await.ok();
+                            tx_chan.tx_done();
+                        }
                     }
                 }
-                Either::Second(p) => {
-                    self.mac.write_frame(p).await.ok();
-                    tx_chan.tx_done();
-                }
+            } else {
+                state_chan.set_link_state(LinkState::Down);
             }
         }
     }

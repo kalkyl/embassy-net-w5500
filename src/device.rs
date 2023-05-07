@@ -5,6 +5,7 @@ use embedded_hal_async::spi::SpiDevice;
 pub const MODE: u16 = 0x00;
 pub const MAC: u16 = 0x09;
 pub const SOCKET_INTR: u16 = 0x18;
+pub const PHY_CFG: u16 = 0x2E;
 
 #[repr(u8)]
 pub enum RegisterBlock {
@@ -147,5 +148,14 @@ impl<SPI: SpiDevice> W5500<SPI> {
         socket::reset_interrupt(&mut self.bus, socket::Interrupt::SendOk).await?;
 
         Ok(write_data.len())
+    }
+
+    pub async fn is_link_up(&mut self) -> bool {
+        let mut link = [0];
+        self.bus
+            .read_frame(RegisterBlock::Common, PHY_CFG, &mut link)
+            .await
+            .ok();
+        link[0] & 1 == 1
     }
 }

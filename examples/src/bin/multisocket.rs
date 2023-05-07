@@ -81,12 +81,12 @@ async fn main(spawner: Spawner) {
 
     // Launch network task
     unwrap!(spawner.spawn(net_task(&stack)));
-    
+
     info!("Waiting for DHCP...");
     let cfg = wait_for_config(stack).await;
     let local_addr = cfg.address.address();
     info!("IP address: {:?}", local_addr);
-    
+
     // Create two sockets listening to the same port, to handle simultaneous connections
     unwrap!(spawner.spawn(listen_task(&stack, 0, 1234)));
     unwrap!(spawner.spawn(listen_task(&stack, 1, 1234)));
@@ -106,7 +106,11 @@ async fn listen_task(stack: &'static Stack<Device<'static>>, id: u8, port: u16) 
             warn!("accept error: {:?}", e);
             continue;
         }
-        info!("SOCKET {}: Received connection from {:?}", id, socket.remote_endpoint());
+        info!(
+            "SOCKET {}: Received connection from {:?}",
+            id,
+            socket.remote_endpoint()
+        );
 
         loop {
             let n = match socket.read(&mut buf).await {
@@ -120,15 +124,16 @@ async fn listen_task(stack: &'static Stack<Device<'static>>, id: u8, port: u16) 
                     break;
                 }
             };
-            info!("SOCKET {}: rxd {}", id, core::str::from_utf8(&buf[..n]).unwrap());
+            info!(
+                "SOCKET {}: rxd {}",
+                id,
+                core::str::from_utf8(&buf[..n]).unwrap()
+            );
 
-            match socket.write_all(&buf[..n]).await {
-                Ok(()) => {}
-                Err(e) => {
-                    warn!("write error: {:?}", e);
-                    break;
-                }
-            };
+            if let Err(e) = socket.write_all(&buf[..n]).await {
+                warn!("write error: {:?}", e);
+                break;
+            }
         }
     }
 }

@@ -91,7 +91,6 @@ async fn main(spawner: Spawner) {
     let mut rx_buffer = [0; 4096];
     let mut tx_buffer = [0; 4096];
     let mut buf = [0; 4096];
-
     loop {
         let mut socket = embassy_net::tcp::TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
         socket.set_timeout(Some(embassy_net::SmolDuration::from_secs(10)));
@@ -102,7 +101,6 @@ async fn main(spawner: Spawner) {
             warn!("accept error: {:?}", e);
             continue;
         }
-
         info!("Received connection from {:?}", socket.remote_endpoint());
         led.set_high();
 
@@ -118,16 +116,12 @@ async fn main(spawner: Spawner) {
                     break;
                 }
             };
-
             info!("rxd {}", core::str::from_utf8(&buf[..n]).unwrap());
 
-            match socket.write_all(&buf[..n]).await {
-                Ok(()) => {}
-                Err(e) => {
-                    warn!("write error: {:?}", e);
-                    break;
-                }
-            };
+            if let Err(e) = socket.write_all(&buf[..n]).await {
+                warn!("write error: {:?}", e);
+                break;
+            }
         }
     }
 }
