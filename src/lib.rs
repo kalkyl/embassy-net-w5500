@@ -4,14 +4,10 @@ mod device;
 mod socket;
 mod spi;
 
-use core::cell::RefCell;
-
 use crate::device::W5500;
 use embassy_futures::select::{select, Either};
 use embassy_net_driver_channel as ch;
 use embassy_net_driver_channel::driver::LinkState;
-use embassy_sync::blocking_mutex::raw::NoopRawMutex;
-use embassy_sync::mutex::Mutex;
 use embassy_time::{Duration, Timer};
 use embedded_hal::digital::OutputPin;
 use embedded_hal_async::digital::Wait;
@@ -50,28 +46,26 @@ impl<'d, SPI: SpiDevice, INT: Wait, RST: OutputPin> Runner<'d, SPI, INT, RST> {
     pub async fn run(mut self) -> ! {
         let (state_chan, mut rx_chan, mut tx_chan) = self.ch.split();
         state_chan.set_link_state(LinkState::Up);
-        let mac = Mutex::<NoopRawMutex, _>::new(RefCell::new(self.mac));
-        let rx_fut = async {
-            loop {
-                self.int.wait_for_low().await.ok();
-                let p = rx_chan.rx_buf().await;
-                if let Ok(n) = mac.lock().await.borrow_mut().read_frame(p).await {
-                    rx_chan.rx_done(n);
+        loop {
+            match select(
+                async {
+                    self.int.wait_for_low().await.ok();
+                    rx_chan.rx_buf().await
+                },
+                tx_chan.tx_buf(),
+            )
+            .await
+            {
+                Either::First(p) => {
+                    if let Ok(n) = self.mac.read_frame(p).await {
+                        rx_chan.rx_done(n);
+                    }
+                }
+                Either::Second(p) => {
+                    self.mac.write_frame(p).await.ok();
+                    tx_chan.tx_done();
                 }
             }
-        };
-
-        let tx_fut = async {
-            loop {
-                let p = tx_chan.tx_buf().await;
-                mac.lock().await.borrow_mut().write_frame(p).await.ok();
-                tx_chan.tx_done();
-            }
-        };
-
-        match select(rx_fut, tx_fut).await {
-            Either::First(x) => x,
-            Either::Second(x) => x,
         }
     }
 }
