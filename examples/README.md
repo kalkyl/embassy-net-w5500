@@ -7,9 +7,15 @@ Examples are written for the [`WIZnet W5500-EVB-Pico`](https://www.wiznet.io/pro
 cargo install probe-rs-cli
 ```
 
-## Running the TCP server example
+## TCP server example
 ```bash
 cargo run --bin tcp --release
 ```
 This example implements a TCP echo server on port 1234 and using DHCP.
 Send it some data, you should see it echoed back and printed in the console.
+
+## Multi-socket example
+```bash
+cargo run --bin multisocket --release
+```
+This example shows how you can allow multiple simultaneous TCP connections, by having multiple sockets listening on the same port.
