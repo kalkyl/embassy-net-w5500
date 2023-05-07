@@ -25,3 +25,9 @@ This example shows how you can allow multiple simultaneous TCP connections, by h
 cargo run --bin tcp-client --release
 ```
 This example implements a TCP client that attempts to connect to a host on port 1234 and send it some data once per second.
+
+## UDP server example
+```bash
+cargo run --bin udp --release
+```
+This example implements a UDP server listening on port 1234 and echoing back the data.
