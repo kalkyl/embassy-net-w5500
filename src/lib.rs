@@ -10,7 +10,7 @@ use crate::device::W5500;
 use embassy_futures::select::{select, Either};
 use embassy_net_driver_channel as ch;
 use embassy_net_driver_channel::driver::LinkState;
-use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
+use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::mutex::Mutex;
 use embassy_time::{Duration, Timer};
 use embedded_hal::digital::OutputPin;
@@ -50,7 +50,7 @@ impl<'d, SPI: SpiDevice, INT: Wait, RST: OutputPin> Runner<'d, SPI, INT, RST> {
     pub async fn run(mut self) -> ! {
         let (state_chan, mut rx_chan, mut tx_chan) = self.ch.split();
         state_chan.set_link_state(LinkState::Up);
-        let mac = Mutex::<ThreadModeRawMutex, _>::new(RefCell::new(self.mac));
+        let mac = Mutex::<NoopRawMutex, _>::new(RefCell::new(self.mac));
         let rx_fut = async {
             loop {
                 self.int.wait_for_low().await.ok();
