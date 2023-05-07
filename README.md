@@ -4,4 +4,4 @@
 
 Supports any SPI driver implementing [`embedded-hal-async`](https://crates.io/crates/embedded-hal-async)
 
-See [`examples`](https://github.com/kalkyl/embassy-net-w5500/tree/main/examples) directory for a simple TCP echo server example made for the rp2040 [`WIZnet W5500-EVB-Pico`](https://www.wiznet.io/product-item/w5500-evb-pico/) module.
+See [`examples`](https://github.com/kalkyl/embassy-net-w5500/tree/main/examples) directory for usage examples with the rp2040 [`WIZnet W5500-EVB-Pico`](https://www.wiznet.io/product-item/w5500-evb-pico/) module.
