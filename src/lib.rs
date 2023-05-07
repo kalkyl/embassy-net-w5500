@@ -55,7 +55,7 @@ impl<'d, SPI: SpiDevice, INT: Wait, RST: OutputPin> Runner<'d, SPI, INT, RST> {
                     }
                 }
                 Either::Second(p) => {
-                    self.mac.write_frame(p).await.unwrap();
+                    self.mac.write_frame(p).await.ok();
                     tx_chan.tx_done();
                 }
             }
