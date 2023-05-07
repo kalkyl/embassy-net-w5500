@@ -21,10 +21,7 @@ pub struct W5500<SPI> {
     bus: SpiInterface<SPI>,
 }
 
-impl<SPI> W5500<SPI>
-where
-    SPI: SpiDevice,
-{
+impl<SPI: SpiDevice> W5500<SPI> {
     /// Create and initialize the W5500 driver
     pub async fn new(spi: SPI, mac_addr: [u8; 6]) -> Result<W5500<SPI>, SPI::Error> {
         let mut bus = SpiInterface(spi);
@@ -35,7 +32,7 @@ where
         // Enable interrupt pin
         bus.write_frame(RegisterBlock::Common, SOCKET_INTR, &[0x01])
             .await?;
-        // Enable receive interrulpt
+        // Enable receive interrupt
         bus.write_frame(
             RegisterBlock::Socket0,
             socket::SOCKET_INTR_MASK,
@@ -64,7 +61,7 @@ where
 
     /// Read bytes from the RX buffer. Returns the number of bytes read.
     async fn read_bytes(&mut self, buffer: &mut [u8], offset: u16) -> Result<usize, SPI::Error> {
-        let rx_size = socket::get_recv_size(&mut self.bus).await? as usize;
+        let rx_size = socket::get_rx_size(&mut self.bus).await? as usize;
 
         let read_buffer = if rx_size > buffer.len() + offset as usize {
             buffer
@@ -89,7 +86,7 @@ where
 
     /// Read an ethernet frame from the device. Returns the number of bytes read.
     pub async fn read_frame(&mut self, frame: &mut [u8]) -> Result<usize, SPI::Error> {
-        let rx_size = socket::get_recv_size(&mut self.bus).await? as usize;
+        let rx_size = socket::get_rx_size(&mut self.bus).await? as usize;
         if rx_size == 0 {
             return Ok(0);
         }
@@ -134,7 +131,6 @@ where
         };
 
         let write_ptr = socket::get_tx_write_ptr(&mut self.bus).await?;
-
         self.bus
             .write_frame(RegisterBlock::TxBuf, write_ptr, write_data)
             .await?;
@@ -145,12 +141,9 @@ where
         .await?;
 
         socket::reset_interrupt(&mut self.bus, socket::Interrupt::SendOk).await?;
-
         socket::command(&mut self.bus, socket::Command::Send).await?;
-
         // Wait for TX to complete
         while !socket::is_interrupt(&mut self.bus, socket::Interrupt::SendOk).await? {}
-
         socket::reset_interrupt(&mut self.bus, socket::Interrupt::SendOk).await?;
 
         Ok(write_data.len())

@@ -89,17 +89,17 @@ pub async fn command<SPI: SpiDevice>(
         .await
 }
 
-pub async fn get_recv_size<SPI: SpiDevice>(bus: &mut SpiInterface<SPI>) -> Result<u16, SPI::Error> {
+pub async fn get_rx_size<SPI: SpiDevice>(bus: &mut SpiInterface<SPI>) -> Result<u16, SPI::Error> {
     loop {
-        // Section 4.2 of datasheet, Sn_TX_FSR address docs indicate that read must be repeated until two sequential reads are stable
-        let mut sample_0 = [0u8; 2];
-        bus.read_frame(RegisterBlock::Socket0, RECVD_SIZE, &mut sample_0)
+        // Wait until two sequential reads are equal
+        let mut res0 = [0u8; 2];
+        bus.read_frame(RegisterBlock::Socket0, RECVD_SIZE, &mut res0)
             .await?;
-        let mut sample_1 = [0u8; 2];
-        bus.read_frame(RegisterBlock::Socket0, RECVD_SIZE, &mut sample_1)
+        let mut res1 = [0u8; 2];
+        bus.read_frame(RegisterBlock::Socket0, RECVD_SIZE, &mut res1)
             .await?;
-        if sample_0 == sample_1 {
-            break Ok(u16::from_be_bytes(sample_0));
+        if res0 == res1 {
+            break Ok(u16::from_be_bytes(res0));
         }
     }
 }

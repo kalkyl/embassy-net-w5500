@@ -1,6 +1,5 @@
 #![no_std]
 /// [`embassy-net`](crates.io/crates/embassy-net) driver for the WIZnet W5500 ethernet chip.
-
 mod device;
 mod socket;
 mod spi;
