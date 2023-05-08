@@ -1,5 +1,7 @@
 # WIZnet W5500 `embassy-net` integration
 
+This repo has moved to https://github.com/embassy-rs/embassy-net-w5500
+
 [`embassy-net`](https://crates.io/crates/embassy-net) integration for the WIZnet W5500 SPI ethernet chip, operating in MACRAW mode.
 
 Supports any SPI driver implementing [`embedded-hal-async`](https://crates.io/crates/embedded-hal-async)
